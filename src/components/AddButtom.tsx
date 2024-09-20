@@ -8,7 +8,9 @@ interface prop {
 }
 function AddButtom({ jwt, product }: prop) {
 
-    async function addToCart() {
+    async function addToCart(event:React.MouseEvent<HTMLButtonElement>) {
+        event.stopPropagation()
+        event.preventDefault();
         if (!jwt) return alert("please login")
         const authenticated = await isAuthenticated(jwt)
         if (!authenticated) return alert("please login")

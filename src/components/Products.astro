@@ -30,7 +30,7 @@ try {
         <p class="text-center text-slate-400 py-10 font-bold text-2xl">Products not available</p>
       ) : (
         products?.data?.map((data: ProductData) => (
-          // <a href={`/products/${data.id}`}>
+          <a href={`/products/${data.id}`}>
             <article>
               <img
                 width={350}
@@ -45,7 +45,7 @@ try {
                <AddButtom product={data} jwt={jwt} client:load/>
               </div>
             </article>
-          //  </a> 
+            </a> 
         ))
       )
     }
