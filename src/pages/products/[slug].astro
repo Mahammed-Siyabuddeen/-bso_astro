@@ -1,0 +1,34 @@
+---
+import type { GetStaticPaths } from "astro";
+import Header from "../../components/Header.astro";
+import Products from "../../components/Products.astro";
+import Layout from "../../layouts/Layout.astro";
+import Product from "../../components/Product.astro";
+import { date } from "astro:schema";
+import type { ProductType } from "../../content/types";
+
+
+let data:ProductType[]|null=null
+try {
+  const response = await fetch(
+    `${import.meta.env.PUBLIC_BACKEND_URL}/api/products/1?populate=Image`
+  );
+   data = await response.json();
+ 
+} catch (error) {
+  console.log('catch');
+  
+}
+
+---
+
+<Layout title="Welcome to Astro.">
+  <main class="m-10">
+    <Header />
+    {
+      data===null?(<p>loading...</p>)
+      :(<Product product={data}/>)
+    }
+    <p>{Astro.props.title}</p>
+  </main>
+</Layout>

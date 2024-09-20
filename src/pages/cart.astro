@@ -1,0 +1,166 @@
+---
+import Header from '../components/Header.astro';
+import type { cartItemType, userType, } from '../content/types';
+import Layout from '../layouts/Layout.astro';
+import {isAuthenticated} from '../utility/auth'
+import {isAuthenticated2} from '../utility/auth2'
+const backendUrl=import.meta.env.PUBLIC_BACKEND_URL
+const jwtCookie=Astro.cookies.get("jwt")
+if(typeof jwtCookie==='undefined') return Astro.redirect('/')
+const {value}:{value:string}=jwtCookie;
+ const authenticated=await isAuthenticated2(value)
+console.log(authenticated);
+
+if(!authenticated) return Astro.redirect('/')
+
+
+
+---
+
+
+<Layout title='cart'>
+  <main class="m-10">
+      <Header />
+    
+        <div class="container w-full mx-auto">
+          <h1 class='text-3xl font-bold text-center my-14'>Cart</h1>
+          <div class=" mx-auto w-4/5 max-md:w-full justify-between">
+            <div class=" flex flex-col md:m-3 md:mr-6  ">
+    
+              <div class="hidden md:flex justify-between p-5">
+                <p class='font-medium w-3/5 items-center text-center'>product Details</p>
+                <p class='font-medium w-1/5 items-center text-center'>Price</p>
+                <p class='w-1/5 items-center text-center opacity-0'>close</p>
+              </div>
+              <div class="cartproudcts">
+                {
+                  authenticated.carts.length==0?
+                  <p class="text-center text-2xl font-bold py-10 text-slate-400">Empty Cart</p>
+                  :authenticated.carts.map((item:cartItemType)=>(
+                    <div class=" flex flex-col md:flex-row items-center border rounded-md p-5 my-3" >
+                       <div class="w-full md:w-3/5 items-center flex">
+                          <div class="relative  w-full md:w-2/4 h-20 m-1">
+                                <img  src={`${import.meta.env.PUBLIC_BACKEND_URL}${item.Image.formats.thumbnail.url}`} class="object-contain w-full h-full" alt="" />
+                         </div>
+                          <div class="w-full  truncate">
+                             <h2>{item.Title}</h2>
+                         </div>
+                       </div>
+                       <div class="hidden md:block w-1/5 text-center">&#8377;{item.Price}</div>
+                     <button
+                         data-id={item.id}
+                        class="removeItem w-1/5 flex justify-center cursor-pointer text-xl font-bold text-red-500"
+                       >
+                       delete
+                     </button>
+                    </div >
+                  ))
+                }
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+  </main>
+</Layout>
+
+
+<script type="module" define:vars={{value,authenticated,backendUrl}}>
+    import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+    let cartData=authenticated.carts
+  console.log(authenticated);
+  
+    const socket = io(backendUrl, {
+      transports: ['websocket'],  
+      withCredentials: true, 
+    });
+  
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket server');
+    });
+    
+    socket.on('cartUpdated', (updatedUser) => {
+      console.log('User Updated:',updatedUser);
+      let cartItemComponent=document.querySelector('.cartproudcts')
+      cartItemComponent.innerHTML=
+      `<div class="cartproudcts">
+          ${updatedUser.data.carts.length===0?
+          `<p class="text-center text-2xl font-bold py-10 text-slate-400">Empty Cart</p>`:
+        updatedUser.data.carts.map((item)=>(
+          `
+            <div class=" flex flex-col md:flex-row items-center border rounded-md p-5 my-3" >
+                   <div class="w-full md:w-3/5  flex">
+                      <div class="relative w-full md:w-2/4 h-20 m-1">
+                            <img src={""} class="w-full h-full" alt="" />
+                     </div>
+                      <div class="flex flex-col item-center gap-1">
+                         <h2>${item.Title}</h2>
+                     </div>
+                   </div>
+                   <div class="hidden md:block w-1/5 text-center">&#8377;${item.Price}</div>
+                 <button
+                     data-id=${item.id}
+                    class="removeItem w-1/5 flex justify-center cursor-pointer text-xl font-bold text-red-500"
+                   >
+                   delete
+                 </button>
+                </div >
+          `
+        ))}  
+      </div>`
+
+
+        const removeButtons = document.querySelectorAll('.removeItem');
+        removeButtons.forEach(button => {
+        button.addEventListener('click', (event) => {
+         const id = event.target.getAttribute('data-id');
+         handleClick(id);
+       });
+      });
+    });
+  
+    socket.on('disconnect', (e) => {
+      console.log('Disconnected from WebSocket server',e);
+    });
+  
+
+  function handleClick(id){
+    console.log(id)
+    const itemId=Number(id)
+    cartData=cartData.filter((data) => data.id !== itemId);
+    fetch(`${backendUrl}/api/users/${authenticated.id}`, {
+          method: 'PUT',
+          headers: {
+              'Authorization': `Bearer ${value}`,
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ carts: cartData })
+      }).then((response) => {
+          console.log("successfy udpa", response);
+          return true;
+
+      }).catch((error) => {
+          console.log('eror happend', error);
+
+      })
+  }
+
+ const children= document.querySelectorAll('.removeItem')
+ children.forEach(child => {
+  child.addEventListener('click', (event) => {
+    console.log('clicked');
+    const id=event.target.getAttribute('data-id')
+    handleClick(id)
+  })
+ });
+</script>
+  
+
+
+
+
+
+
+
+
