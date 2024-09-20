@@ -1,0 +1,57 @@
+---
+import type { ProductsType, ProductData } from "../content/types";
+import AddButtom from "./AddButtom"
+let products: ProductsType | null = null;
+const jwtCookie=Astro.cookies.get("jwt")
+let jwt:string|null=null
+if(jwtCookie) {
+  jwt=jwtCookie.value
+}
+try {
+  const response = await fetch(
+    `${import.meta.env.PUBLIC_BACKEND_URL}/api/products?populate=Image`
+  )
+  products = await response.json();
+} catch (error) {
+  console.log("fdf");
+}
+
+---
+
+<section class="">
+  <h1 class="text-3xl my-4 font-bold">Products</h1>
+  <div
+    class="grid grid-cols-3 gap-x-16 gap-y-32 max-md:grid-cols-1 max-sm:gap-y-14 place-items-center"
+  >
+    {
+      products === null ? (
+        <p>Loading</p>
+      ) : products?.data?.length === 0 ? (
+        <p class="text-center text-slate-400 py-10 font-bold text-2xl">Products not available</p>
+      ) : (
+        products?.data?.map((data: ProductData) => (
+          // <a href={`/products/${data.id}`}>
+            <article>
+              <img
+                width={350}
+                height={300 / 1.5}
+                class="rounded-2xl shadow-xl mb-6 object-cover"
+                src={`${import.meta.env.PUBLIC_BACKEND_URL}${data.attributes.Image.data.attributes.url}`}
+                alt=""
+              />
+              <p class="font-medium font-md">{data.attributes.Title}</p>
+              <div class="flex justify-between items-center mx-2 my-2">
+                <p class="font-semibold text-2xl">${data.attributes.Price}</p>
+               <AddButtom product={data} jwt={jwt} client:load/>
+              </div>
+            </article>
+          //  </a> 
+        ))
+      )
+    }
+  </div>
+</section>
+<script define:vars={{products}}>
+  console.log(products);
+  
+</script>
