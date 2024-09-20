@@ -1,0 +1,70 @@
+---
+const backendUrl=import.meta.env.PUBLIC_BACKEND_URL
+export async function handleSubmit(event: Event) {
+  event.preventDefault();
+  console.log("Form submitted");
+}
+---
+
+<div class="pt-20 w-full h-screen">
+  <form id="loginForm" method="post" class="w-2/4 max-md:w-full mx-auto rounded shadow-2xl  bg-white text-slate-950">
+    <h1 class="text-center text-2xl font-bold py-4">Login</h1>
+    <div class="p-4 w-full">
+      <label class="font-semibold" for="username">Username</label>
+      <input
+        type="text"
+        placeholder="Enter username"
+        class="w-full px-4 py-2 rounded border-2 mb-3 mt-1 border-red-300"
+        name="username"
+      />
+      <label class="font-semibold" for="password">Password</label>
+      <input
+        type="password"
+        placeholder="Enter password"
+        class="w-full px-4 py-2 rounded border-2 mb-3 mt-1 border-red-300"
+        name="password"
+      />
+      <button
+        type="submit"
+        class="w-9/12 mx-auto py-3 px-1 grid bg-red-300 rounded"
+      >
+        Login
+      </button>
+      <p class="text-red-300 font-bold py-3 text-center">don't have a account?  <a class="underline" href="/signup">Signup</a></p>
+    </div>
+  </form>
+</div>
+
+<script type="module" define:vars={{backendUrl}}>
+  document.querySelector("#loginForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    console.log("Form submitted");
+
+    const form = event.target;
+    const formData = new FormData(form);
+    const username = formData.get("username");
+    const password = formData.get("password");
+
+    try {
+      const response = await fetch(`${backendUrl}/api/auth/local`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: username,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.jwt) {
+        document.cookie = `jwt=${data.jwt}; path=/; max-age=${60 * 60 * 24 * 7};`;
+        window.location.href = "/";
+      } else {
+        console.log("Invalid login credentials!");
+      }
+    } catch (error) {
+      console.log("Error logging in. Please try again!");
+    }
+  });
+</script>
